@@ -1,0 +1,21 @@
+{
+    "name":"2018 Spring",
+    "version":"1.0.0",
+    "scripts":{
+    "test":"echo\"Error: no test specifies\" && exit 1"   
+    },
+
+    "license": "ISC",
+
+    "dependencies":{
+        "bootstrap":"^4.0.0",
+        "express": "^4.16.2",
+        "jquery":"^3.3.1",
+        "popper.js": "^1.12.9"
+    },
+    "devDependencies": {
+        
+    }
+
+
+}
