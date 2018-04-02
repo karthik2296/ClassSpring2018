@@ -9,25 +9,26 @@ import { Game, User, Quote } from '../models/game';
 export class GameComponent implements OnInit {
 
     Model = new Game();
-    Me=new User();
+    Me = new User();
 
   constructor() {
-    this.Me.Name="karthik"
-   }
-  
+    this.Me.Name = "Moshe Plotkin"
+  }
 
   ngOnInit() {
   }
-    submitQuote(e:MouseEvent, text: string){
-      e.preventDefault();
+
+  submitQuote(e: MouseEvent, text: string){
+    e.preventDefault();
 
     if(this.MyPlayedQuote()) return;
-    
-      this.Model.PlayedQuotes.push({Text: text, PlayerName:this.Me.Name , Chosen:false });
-      this.Model.MyQuotes.splice(this.Model.MyQuotes.indexOf(text),1);
-    }
-    MyPlayedQuote():Quote | null {
-      return this.Model.PlayedQuotes.find( x =>x.PlayerName==this.Me.Name );
-    }
 
+    this.Model.PlayedQuotes.push({ Text: text, PlayerName: this.Me.Name, Chosen: false });
+    this.Model.MyQuotes.splice( this.Model.MyQuotes.indexOf(text), 1 );
+  }
+
+  MyPlayedQuote = () => this.Model.PlayedQuotes.find( x => x.PlayerName == this.Me.Name );
+  ChosenQuote = () => this.Model.PlayedQuotes.find( x => x.Chosen );
+  IsEveryoneDone = () => this.Model.PlayedQuotes.length == this.Model.Players.length - 1;
+  IAmTheDealer = () => this.Me.Name == this.Model.Dealer;
 }
