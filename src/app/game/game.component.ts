@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Http } from "@angular/http";
 import { Game, User, Quote } from '../models/game';
+import { MessagesService } from '../services/messages.service';
+import { GameService } from '../services/game.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-game',
@@ -10,15 +13,24 @@ import { Game, User, Quote } from '../models/game';
 export class GameComponent implements OnInit {
 
     Model = new Game();
-    Me = new User();
+    Me: User;
+
     private _api = "http://localhost:8080/game";
 
-  constructor(private http: Http) {
-    this.Me.Name = "Moshe Plotkin"
-    http.get(this._api + "/quotes").subscribe(data=> this.Me.MyQuotes = data.json())
+  constructor(
+      private http: Http,
+      private _Messages: MessagesService, 
+      private _Game: GameService, 
+      private _Router: Router
+    ) {
+        this.Me = _Game.Me;
+        if(!this.Me){
+            _Router.navigate(['/login']);
+        }
+        this.join(this.Me.Name);
+
     setInterval(()=> this.refresh(), 1000)
   }
-
 
   ngOnInit() {
   }
@@ -28,23 +40,45 @@ export class GameComponent implements OnInit {
         .subscribe(data=> this.Model = data.json())
   }
 
-  flipPicture(e:MouseEvent){
-       this.http.post(this._api+ "/picture",{})
-          .subscribe();
+  flipPicture(e: MouseEvent){
+      this._Messages.Messages.push({ Text: 'Picture Flipped', Type: 'success'})
+    this.http.post(this._api + "/picture",{})
+        .subscribe();
   }
-
 
   submitQuote(e: MouseEvent, text: string){
     e.preventDefault();
 
-    if(this.MyPlayedQuote()) return;
+    if(this.MyPlayedQuote() || this.IAmTheDealer()) return;
 
-    this.Model.PlayedQuotes.push({ Text: text, PlayerName: this.Me.Name, Chosen: false });
-    this.Me.MyQuotes.splice( this.Me.MyQuotes.indexOf(text), 1 );
+    this._Messages.Messages.push({ Text: 'Quote submitted: ' + text, Type: 'success'})
+    this.http.post(this._api + "/quotes", { Text: text, PlayerId: this.Me.Name })
+        .subscribe(data=> {
+            if(data.json().success){
+                this.Me.MyQuotes.splice( this.Me.MyQuotes.indexOf(text), 1 );
+            }
+        }, err=> {
+            console.log(err);
+        });
   }
 
-  MyPlayedQuote = () => this.Model.PlayedQuotes.find( x => x.PlayerName == this.Me.Name );
+  chooseQuote(e: MouseEvent, quote: Quote){
+    e.preventDefault();
+    this.http.post(this._api + "/quotes/choose", { Text: quote.Text, PlayerId: this.Me.Name })
+        .subscribe(data=> {
+        }, err=> {
+            console.log(err);
+        });
+  }
+
+  join(name: string){
+    this._Messages.Messages.push({ Text: 'You\'ve joined this game. Welcome ' + name , Type: 'success'})
+    this.http.get(this._api + "/quotes", { params : { playerId: name } })
+    .subscribe(data=> this.Me.MyQuotes = data.json() )
+  }
+
+  MyPlayedQuote = () => this.Model.PlayedQuotes.find( x => x.PlayerId == this.Me.Name );
   ChosenQuote = () => this.Model.PlayedQuotes.find( x => x.Chosen );
   IsEveryoneDone = () => this.Model.PlayedQuotes.length == this.Model.Players.length - 1;
-  IAmTheDealer = () => this.Me.Name == this.Model.Dealer;
+  IAmTheDealer = () => this.Me.Name == this.Model.DealerId;
 }
